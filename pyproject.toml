@@ -6,7 +6,7 @@ authors = [
     {name = "FrostN0v0", email = "1614591760@qq.com"},
 ]
 dependencies = [
-    "nonebot2[fastapi]>=2.3.3",
+    "nonebot2>=2.3.3",
     "pillow>=10.4.0",
     "nonebot-plugin-alconna>=0.52.3",
     "nonebot-plugin-uninfo>=0.3.0",
