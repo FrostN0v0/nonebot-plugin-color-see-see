@@ -1,0 +1,70 @@
+[project]
+name = "nonebot-plugin-color-see-see"
+version = "0.1.0"
+description = "给你点颜色瞧瞧？给我点颜色瞧瞧（让我康康！"
+authors = [
+    {name = "FrostN0v0", email = "1614591760@qq.com"},
+]
+dependencies = [
+    "nonebot2[fastapi]>=2.3.3",
+    "pillow>=10.4.0",
+    "nonebot-plugin-alconna>=0.52.3",
+    "nonebot-plugin-uninfo>=0.3.0",
+]
+requires-python = ">=3.10"
+readme = "README.md"
+license = {text = "MIT"}
+
+[project.optional-dependencies]
+adapters = [
+    "nonebot-adapter-onebot>=2.4.5",
+]
+
+[tool.nonebot]
+plugins = ["nonebot_plugin_color_see_see"]
+adapters = [
+    { name = "OneBot V11", module_name = "nonebot.adapters.onebot.v11" }
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "ruff>=0.6.1",
+    "black>=24.4.2",
+    "isort>=5.13.2",
+    "pre-commit>=3.7.1",
+]
+
+[tool.black]
+line-length = 90
+target-version = ["py310", "py311", "py312"]
+include = '\.pyi?$'
+extend-exclude = '''
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 90
+length_sort = true
+skip_gitignore = true
+force_sort_within_sections = true
+extra_standard_library = ["typing_extensions"]
+
+[tool.ruff]
+line-length = 90
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "UP", "C", "T", "PYI", "PT", "Q"]
+ignore = ["E402", "C901"]
+
+[tool.pyright]
+pythonVersion = "3.10"
+pythonPlatform = "All"
+typeCheckingMode = "basic"
