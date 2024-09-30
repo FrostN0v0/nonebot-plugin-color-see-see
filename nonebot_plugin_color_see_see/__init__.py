@@ -49,6 +49,7 @@ color_game = on_alconna(
                 fuzzy_match=True,
             ),),
     aliases=("猜色块", "给我点颜色看看", "给我点颜色瞧瞧"),
+    use_cmd_start = True,
 )
 
 block_color = on_alconna(
@@ -60,6 +61,7 @@ block_color = on_alconna(
                 fuzzy_match=True,
             )),
     aliases=("块", "b"),
+    use_cmd_start = True,
 )
 
 games: dict[str, ColorGame] = {}
