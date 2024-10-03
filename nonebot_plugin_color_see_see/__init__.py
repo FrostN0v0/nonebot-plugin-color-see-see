@@ -29,6 +29,7 @@ __plugin_meta__ = PluginMetadata(
         "发送 color/给我点颜色看看 开始游戏\n"
         "可使用 -t/--time/time 秒数 自定义超时结束时间\n"
         "发送 b/块+数字 猜出颜色不同的色块\n"
+        "发送 color stop 手动停止当前游戏\n"
     ),
     type="application",
     homepage="https://github.com/FrostN0v0/nonebot-plugin-color-see-see",
@@ -69,6 +70,19 @@ block_color = on_alconna(
     aliases=("块", "b"),
 )
 
+stop_game_command = on_alconna(
+    Alconna(
+        "color stop",
+        meta=CommandMeta(
+            description="手动停止当前进行的猜色块游戏",
+            usage=__plugin_meta__.usage,
+            example="color stop",
+            fuzzy_match=True,
+        ),
+    ),
+    aliases=("停止猜色块", "停止给我点颜色看看", "停止给我点颜色瞧瞧"),
+)
+
 games: dict[str, ColorGame] = {}
 timers: dict[str, tuple[Optional[TimerHandle], Optional[int]]] = {}
 players: dict[str, dict[str, int]] = {}
@@ -86,7 +100,7 @@ async def _(user_session: Uninfo, time: Match[int]):
             timeout = None
         elif time.result > 300:
             await color_game.finish(
-                "您输入的时间超过300秒，是否开启无尽模式？无尽模式下，只有通过color stop才能停止游戏。若要开启无尽模式，请输入 color -t 0"
+                "您输入的时间超过300秒，是否开启无尽模式？无尽模式下，只有通过 color stop 才能停止游戏。若要开启无尽模式，请输入 color -t 0"
             )
         else:
             timeout = time.result
@@ -109,9 +123,9 @@ async def _(user_session: Uninfo, block: Match[int]):
     user_id = str(user_session.user.id)
     user_name = user_session.user.name or user_id
     if not games.get(group_id):
-        await UniMessage(
+        await block_color.finish(
             "当前没有进行中的给我点颜色看看小游戏，请发送 给我点颜色看看 开一局吧"
-        ).finish()
+        )
     game = games[group_id]
     timer_info = timers.get(group_id)
     if timer_info:
@@ -120,10 +134,21 @@ async def _(user_session: Uninfo, block: Match[int]):
             set_timeout(group_id, timeout)
     if game.diff_block == block.result:
         game.add_score(user_id, user_name)
-        await UniMessage.text(
-            f"猜对啦，获得积分{game.block_column}分，现有积分{game.get_scores(user_id)}分"
-        ).send()
-        await UniMessage.image(raw=game.get_next_img()).finish()
+        await block_color.send(
+            UniMessage.text(
+                f"猜对啦，获得积分{game.block_column}分，现有积分{game.get_scores(user_id)}分"
+            )
+        )
+        await block_color.finish(UniMessage.image(raw=game.get_next_img()))
+
+
+@stop_game_command.handle()
+async def _(matcher: Matcher, user_session: Uninfo):
+    group_id = str(user_session.scene.id)
+    if not games.get(group_id):
+        await matcher.finish("当前没有进行中的给我点颜色看看小游戏，请发送 给我点颜色看看 开一局吧")
+    else:
+        await stop_game_timeout(group_id)
 
 
 def stop_game(group_id: str):
@@ -137,21 +162,19 @@ async def stop_game_timeout(group_id: str):
     game = games.get(group_id, None)
     stop_game(group_id)
     if game:
+        await UniMessage.text(f"本次答案为 块 [{game.get_diff_block()}] 哦").send()
         sorted_scores = dict(
             sorted(game.scores.items(), key=lambda item: item[1].score, reverse=True)
         )
         if not sorted_scores:
             try:
-                await UniMessage(
-                    f"游戏已结束，没有玩家得分，本次答案为块[{game.get_diff_block()}]哦"
-                ).finish()
+                await UniMessage("游戏已结束，没有玩家得分").finish()
             except FinishedException:
                 return
-        await UniMessage.text(f"本次答案为块[{game.get_diff_block()}]哦").send()
         msg = UniMessage.text("游戏结束，积分排行榜：\n")
         for step, (_, scores) in enumerate(sorted_scores.items()):
-            msg += UniMessage.text(f"{step + 1}.{scores.user_name}，{scores.score}分\n")
-        await msg.send()
+            msg += UniMessage.text(f"{step + 1}. {scores.user_name}，{scores.score}分\n")
+        await UniMessage(msg).send()
 
 
 def set_timeout(group_id: str, timeout: Optional[int] = 20):
@@ -165,5 +188,5 @@ def set_timeout(group_id: str, timeout: Optional[int] = 20):
         )
         timers[group_id] = (timer_handle, timeout)
     else:
-        # 永久模式
+        # 无尽模式
         timers[group_id] = (None, None)
