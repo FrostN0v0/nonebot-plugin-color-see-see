@@ -107,14 +107,15 @@ async def _(user_session: Uninfo, time: Match[int]):
     group_id = str(user_session.scene.id)
     timeout: int | None = None
     if games.get(group_id):
-        await color_game.finish("给我点颜色看看正在游戏中，请对局结束后再开局\n")
+        await UniMessage("给我点颜色看看正在游戏中，请对局结束后再开局\n").finish()
     if time.available:
         if time.result == 0:
             timeout = None
         elif time.result > 300:
-            await color_game.finish(
-                "您输入的时间超过300秒，是否开启无尽模式？无尽模式下，只有通过 color stop 才能停止游戏。若要开启无尽模式，请输入 color -t 0"
-            )
+            await UniMessage(
+                "您输入的时间超过300秒，是否开启无尽模式？无尽模式下，"
+                "只有通过 color stop 才能停止游戏。若要开启无尽模式，请输入 无尽猜色块"
+            ).finish()
         else:
             timeout = time.result
     else:
@@ -126,7 +127,7 @@ async def _(user_session: Uninfo, time: Match[int]):
         f"{user_name} 发起了小游戏 给我点颜色看看！请发送“块+数字”，挑出颜色不同的色块\n"
     )
     msg += UniMessage.image(raw=game.get_color_img())
-    await color_game.send(msg)
+    await UniMessage.send(msg)
     set_timeout(group_id, timeout)
 
 
@@ -145,34 +146,21 @@ async def _(user_session: Uninfo):
 async def _(user_session: Uninfo, block: Match[int]):
     group_id = str(user_session.scene.id)
     user_id = str(user_session.user.id)
-    user_name = user_session.user.name or user_id
+    user_name = user_session.user.name if user_session.user.name is not None else user_id
     if not games.get(group_id):
-        await block_color.finish(
+        await UniMessage(
             "当前没有进行中的给我点颜色看看小游戏，请发送 给我点颜色看看 开一局吧"
-        )
-    game = games[group_id]
-    timer_info = timers.get(group_id)
-    if timer_info:
-        timeout = timer_info[1]
-        if timeout is not None:
-            set_timeout(group_id, timeout)
+        ).finish()
+    game = games[str(user_session.scene.id)]
+    if timeout := timers.get(group_id):
+        timeout = timeout[1]
+        set_timeout(group_id, timeout)
     if game.diff_block == block.result:
         game.add_score(user_id, user_name)
-        await block_color.send(
-            UniMessage.text(
-                f"猜对啦，获得积分{game.block_column}分，现有积分{game.get_scores(user_id)}分"
-            )
-        )
-        await block_color.finish(UniMessage.image(raw=game.get_next_img()))
-
-
-@stop_game_command.handle()
-async def _(matcher: Matcher, user_session: Uninfo):
-    group_id = str(user_session.scene.id)
-    if not games.get(group_id):
-        await matcher.finish("当前没有进行中的给我点颜色看看小游戏，请发送 给我点颜色看看 开一局吧")
-    else:
-        await stop_game_timeout(group_id)
+        await UniMessage.text(
+            f"猜对啦，获得积分{game.block_column}分，现有积分{game.get_scores(user_id)}分"
+        ).send()
+        await UniMessage.image(raw=game.get_next_img()).finish()
 
 
 def stop_game(group_id: str):
