@@ -28,8 +28,9 @@ __plugin_meta__ = PluginMetadata(
     usage=(
         "发送 color/给我点颜色看看 开始游戏\n"
         "可使用 -t/--time/time 秒数 自定义超时结束时间\n"
+        "可使用 -s/--stop/stop 手动停止当前游戏\n"
+        "发送 无尽猜色块 开始无超时的无尽模式游戏\n"
         "发送 b/块+数字 猜出颜色不同的色块\n"
-        "发送 color stop 手动停止当前游戏\n"
     ),
     type="application",
     homepage="https://github.com/FrostN0v0/nonebot-plugin-color-see-see",
@@ -46,6 +47,7 @@ color_game = on_alconna(
     Alconna(
         "color",
         Option("-t|--time|time", Args["time", int], help_text="设定超时时间"),
+        Option("-s|--stop|stop", help_text="停止游戏"),
         meta=CommandMeta(
             description=__plugin_meta__.description,
             usage=__plugin_meta__.usage,
@@ -53,7 +55,15 @@ color_game = on_alconna(
             fuzzy_match=True,
         ),
     ),
+    use_cmd_start=True,
     aliases=("猜色块", "给我点颜色看看", "给我点颜色瞧瞧"),
+)
+color_game.shortcut(
+    "停止猜色块|停止给我点颜色看看|停止给我点颜色瞧瞧",
+    {"prefix": True, "args": ["--stop"]}
+)
+color_game.shortcut(
+    "无尽猜色块", {"prefix": True, "args": ["--time 0"]}
 )
 
 block_color = on_alconna(
@@ -67,20 +77,8 @@ block_color = on_alconna(
             fuzzy_match=True,
         ),
     ),
+    use_cmd_start=True,
     aliases=("块", "b"),
-)
-
-stop_game_command = on_alconna(
-    Alconna(
-        "color stop",
-        meta=CommandMeta(
-            description="手动停止当前进行的猜色块游戏",
-            usage=__plugin_meta__.usage,
-            example="color stop",
-            fuzzy_match=True,
-        ),
-    ),
-    aliases=("停止猜色块", "停止给我点颜色看看", "停止给我点颜色瞧瞧"),
 )
 
 games: dict[str, ColorGame] = {}
@@ -89,7 +87,23 @@ players: dict[str, dict[str, int]] = {}
 default_difficulty = 2
 
 
-@color_game.handle()
+@color_game.assign("$main")
+async def _(user_session: Uninfo):
+    user_name = user_session.user.name
+    group_id = str(user_session.scene.id)
+    if games.get(group_id):
+        await UniMessage("给我点颜色看看正在游戏中，请对局结束后再开局\n").finish()
+    game = ColorGame(default_difficulty)
+    games[group_id] = game
+    msg = UniMessage.text(
+        f"{user_name} 发起了小游戏 给我点颜色看看！请发送“块+数字”，挑出颜色不同的色块\n"
+    )
+    msg += UniMessage.image(raw=game.get_color_img())
+    await UniMessage.send(msg)
+    set_timeout(group_id)
+
+
+@color_game.assign("time")
 async def _(user_session: Uninfo, time: Match[int]):
     user_name = user_session.user.name
     group_id = str(user_session.scene.id)
@@ -115,6 +129,17 @@ async def _(user_session: Uninfo, time: Match[int]):
     msg += UniMessage.image(raw=game.get_color_img())
     await color_game.send(msg)
     set_timeout(group_id, timeout)
+
+
+@color_game.assign("stop")
+async def _(user_session: Uninfo):
+    group_id = str(user_session.scene.id)
+    if not games.get(group_id):
+        await UniMessage(
+            "当前没有进行中的给我点颜色看看小游戏，请发送 给我点颜色看看 开一局吧"
+        ).finish()
+    else:
+        await stop_game_timeout(group_id)
 
 
 @block_color.handle()
