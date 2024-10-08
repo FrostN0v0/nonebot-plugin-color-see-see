@@ -1,11 +1,9 @@
 import asyncio
 from asyncio import TimerHandle
-from typing import Optional
 
 from nonebot import require
 from nonebot.exception import FinishedException
 from nonebot.plugin import PluginMetadata, inherit_supported_adapters
-from nonebot.matcher import Matcher
 
 from .data_source import ColorGame
 
@@ -82,7 +80,7 @@ block_color = on_alconna(
 )
 
 games: dict[str, ColorGame] = {}
-timers: dict[str, tuple[Optional[TimerHandle], Optional[int]]] = {}
+timers: dict[str, tuple[TimerHandle | None, int | None]] = {}
 players: dict[str, dict[str, int]] = {}
 default_difficulty = 2
 
@@ -107,6 +105,7 @@ async def _(user_session: Uninfo):
 async def _(user_session: Uninfo, time: Match[int]):
     user_name = user_session.user.name
     group_id = str(user_session.scene.id)
+    timeout: int | None = None
     if games.get(group_id):
         await color_game.finish("给我点颜色看看正在游戏中，请对局结束后再开局\n")
     if time.available:
@@ -202,7 +201,7 @@ async def stop_game_timeout(group_id: str):
         await UniMessage(msg).send()
 
 
-def set_timeout(group_id: str, timeout: Optional[int] = 20):
+def set_timeout(group_id: str, timeout: int | None = 20):
     if timer := timers.get(group_id, None):
         if timer[0]:
             timer[0].cancel()
