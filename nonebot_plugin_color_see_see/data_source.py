@@ -1,9 +1,8 @@
+import random
 from io import BytesIO
-
-from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 
-import random
+from PIL import Image, ImageDraw, ImageFont
 
 font_path: Path = Path(__file__).parent / "resources"
 
@@ -16,12 +15,12 @@ class UserScore:
 class ColorGame:
     def __init__(self, block_column: int) -> None:
         self.block_column = block_column
-        self.diff_block = random.randint(1, block_column ** 2)
+        self.diff_block = random.randint(1, block_column**2)
         self.color_img = self.__create_blocks()
         self.scores: dict[str, UserScore] = {}
 
     def __create_blocks(self):
-        block_num = self.block_column ** 2
+        block_num = self.block_column**2
         block_size = 2400 // self.block_column
         color_img = Image.new("RGBA", (2400, 2400), "white")
         draw = ImageDraw.Draw(color_img)
@@ -39,10 +38,14 @@ class ColorGame:
             x = (i % self.block_column) * block_size
             y = (i // self.block_column) * block_size
             draw.rounded_rectangle(
-                (x, y, x + block_size - 16, y + block_size - 16), 12, fill=color)
-            draw.text((x + 16, y + 16), str(i+1),
-                      font=ImageFont.truetype(
-                        str(font_path / "arial.ttf"), font_size), fill="white")
+                (x, y, x + block_size - 16, y + block_size - 16), 12, fill=color
+            )
+            draw.text(
+                (x + 16, y + 16),
+                str(i + 1),
+                font=ImageFont.truetype(str(font_path / "arial.ttf"), font_size),
+                fill="white",
+            )
         color_img = color_img.resize((600, 600), Image.Resampling.LANCZOS)
         buf = BytesIO()
         color_img.save(buf, format="PNG")
@@ -56,7 +59,7 @@ class ColorGame:
 
     def get_next_img(self) -> bytes:
         self.block_column += 1
-        self.diff_block = random.randint(1, self.block_column ** 2)
+        self.diff_block = random.randint(1, self.block_column**2)
         self.color_img = self.__create_blocks()
         return self.color_img
 
