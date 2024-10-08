@@ -9,16 +9,16 @@ from .data_source import ColorGame
 
 require("nonebot_plugin_uninfo")
 require("nonebot_plugin_alconna")
+from nonebot_plugin_uninfo import Uninfo
 from nonebot_plugin_alconna import (
     Args,
     Match,
     Option,
     Alconna,
-    CommandMeta,
     UniMessage,
-    on_alconna
+    CommandMeta,
+    on_alconna,
 )
-from nonebot_plugin_uninfo import Uninfo
 
 __plugin_meta__ = PluginMetadata(
     name="给我点颜色瞧瞧",
@@ -58,11 +58,9 @@ color_game = on_alconna(
 )
 color_game.shortcut(
     "停止猜色块|停止给我点颜色看看|停止给我点颜色瞧瞧",
-    {"prefix": True, "args": ["--stop"]}
+    {"prefix": True, "args": ["--stop"]},
 )
-color_game.shortcut(
-    "无尽猜色块", {"prefix": True, "args": ["--time 0"]}
-)
+color_game.shortcut("无尽猜色块", {"prefix": True, "args": ["--time 0"]})
 
 block_color = on_alconna(
     Alconna(
