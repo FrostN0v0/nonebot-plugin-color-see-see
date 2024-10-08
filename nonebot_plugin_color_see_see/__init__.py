@@ -74,7 +74,7 @@ block_color = on_alconna(
         ),
     ),
     use_cmd_start=True,
-    aliases=("块", "b"),
+    aliases=("块", "b", "B"),
 )
 
 games: dict[str, ColorGame] = {}
@@ -88,7 +88,7 @@ async def _(user_session: Uninfo):
     user_name = user_session.user.name
     group_id = str(user_session.scene.id)
     if games.get(group_id):
-        await UniMessage("给我点颜色看看正在游戏中，请对局结束后再开局\n").finish()
+        await UniMessage("给我点颜色看看正在进行中，请勿重复开局\n").finish()
     game = ColorGame(default_difficulty)
     games[group_id] = game
     msg = UniMessage.text(
@@ -105,7 +105,7 @@ async def _(user_session: Uninfo, time: Match[int]):
     group_id = str(user_session.scene.id)
     timeout: int | None = None
     if games.get(group_id):
-        await UniMessage("给我点颜色看看正在游戏中，请对局结束后再开局\n").finish()
+        await UniMessage("给我点颜色看看正在进行中，请勿重复开局\n").finish()
     if time.available:
         if time.result == 0:
             timeout = None
@@ -172,13 +172,13 @@ async def stop_game_timeout(group_id: str):
     game = games.get(group_id, None)
     stop_game(group_id)
     if game:
-        await UniMessage.text(f"本次答案为 块 [{game.get_diff_block()}] 哦").send()
+        await UniMessage.text(f"本次答案为 块[{game.get_diff_block()}] 哦").send()
         sorted_scores = dict(
             sorted(game.scores.items(), key=lambda item: item[1].score, reverse=True)
         )
         if not sorted_scores:
             try:
-                await UniMessage("游戏已结束，没有玩家得分").finish()
+                await UniMessage("游戏结束，没有玩家得分").finish()
             except FinishedException:
                 return
         msg = UniMessage.text("游戏结束，积分排行榜：\n")
