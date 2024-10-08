@@ -1,6 +1,6 @@
 [project]
 name = "nonebot-plugin-color-see-see"
-version = "0.1.1"
+version = "0.2.0"
 description = "给你点颜色瞧瞧？给我点颜色瞧瞧（让我康康！"
 authors = [
     {name = "FrostN0v0", email = "1614591760@qq.com"},
